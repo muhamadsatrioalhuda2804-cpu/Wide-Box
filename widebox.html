@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WB Streaming</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg:#0a0a0a;
+      --primary:#d4af37;
+      --accent:#f5d76e;
+      --text:#ffffff;
+      --muted:#cfcfcf;
+      --card:#111111;
+      --border:#2a2a2a;
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; font-family:'Poppins', sans-serif; }
+    body { background:var(--bg); color:var(--text); }
+
+    header {
+      position:fixed; top:0; width:100%;
+      display:flex; justify-content:space-between; align-items:center;
+      padding:15px 40px;
+      backdrop-filter: blur(10px);
+      background:rgba(10,10,10,0.7);
+      z-index:10;
+      border-bottom:1px solid var(--border);
+    }
+
+    .logo img { height:28px; }
+
+    nav { display:flex; align-items:center; gap:15px; }
+
+    nav input {
+      padding:8px 12px;
+      background:#141414;
+      border:1px solid var(--border);
+      color:var(--text);
+      border-radius:6px;
+    }
+
+    nav a { color:#aaa; text-decoration:none; font-size:14px; }
+    nav a:hover { color:var(--primary); }
+
+    .hero {
+      height:90vh;
+      background:url('https://images.unsplash.com/photo-1497032628192-86f99bcd76bc') center/cover;
+      display:flex; align-items:center; padding:60px;
+    }
+
+    .btn {
+      padding:10px 20px;
+      background:var(--primary);
+      border:none;
+      color:#000;
+      cursor:pointer;
+      border-radius:6px;
+    }
+
+    .section { padding:80px 40px 20px; }
+    .row { display:flex; overflow-x:auto; gap:16px; }
+
+    .card {
+      min-width:180px; height:260px;
+      border-radius:12px; overflow:hidden;
+      cursor:pointer; position:relative;
+      transition:0.3s ease;
+      background:var(--card);
+      border:1px solid var(--border);
+    }
+
+    .card img { width:100%; height:100%; object-fit:cover; }
+    .card:hover { transform:scale(1.1); }
+
+    .info {
+      position:absolute; bottom:0;
+      background:linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+      width:100%; padding:10px;
+      opacity:0;
+    }
+
+    .card:hover .info { opacity:1; }
+
+    .fav {
+      position:absolute; top:10px; right:10px;
+      background:#000;
+      padding:5px 8px;
+      border-radius:6px;
+      font-size:12px;
+      color:var(--primary);
+    }
+
+    .player {
+      position:fixed;
+      top:0; left:0;
+      width:100%; height:100%;
+      background:#000;
+      display:none;
+      justify-content:center;
+      align-items:center;
+      flex-direction:column;
+      z-index:100;
+    }
+
+    video { width:85%; }
+
+    .close {
+      position:absolute;
+      top:20px; right:30px;
+      font-size:28px;
+      cursor:pointer;
+    }
+
+    .login {
+      position:fixed;
+      width:100%; height:100%;
+      background:var(--bg);
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      z-index:200;
+    }
+
+    .login-box {
+      background:var(--card);
+      padding:30px;
+      border-radius:12px;
+      width:320px;
+    }
+
+    .login-box h2.main {
+      color:var(--primary);
+      text-align:center;
+    }
+
+    .login-box input {
+      width:100%; padding:10px;
+      margin:10px 0;
+      background:#141414;
+      border:1px solid var(--border);
+      color:#fff;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="login" id="loginPage">
+  <div class="login-box">
+    <h2 class="main">Wide Box</h2>
+    <input type="text" placeholder="Username" id="user" />
+    <input type="password" placeholder="Password" id="pass" />
+    <button class="btn" onclick="login()">Masuk</button>
+  </div>
+</div>
+
+<header>
+  <div class="logo">WB</div>
+  <nav>
+    <input type="text" placeholder="Search..." onkeyup="searchMovie(this.value)">
+  </nav>
+</header>
+
+<section class="hero">
+  <div>
+    <h1>Streaming Tanpa Batas</h1>
+    <button class="btn" onclick="playVideo()">Play</button>
+  </div>
+</section>
+
+<section class="section">
+  <h2>Movies</h2>
+  <div class="row" id="movieRow"></div>
+</section>
+
+<section class="section">
+  <h2>My List</h2>
+  <div class="row" id="favRow"></div>
+</section>
+
+<div class="player" id="player">
+  <span class="close" onclick="closePlayer()">&times;</span>
+  <video controls id="videoPlayer">
+    <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4">
+  </video>
+</div>
+
+<script>
+  let movies = [
+    {title:"Avenger Style", img:"https://picsum.photos/300/400?1"},
+    {title:"Dark Night", img:"https://picsum.photos/300/400?2"},
+    {title:"Space War", img:"https://picsum.photos/300/400?3"},
+    {title:"Love Story", img:"https://picsum.photos/300/400?4"},
+    {title:"Horror Night", img:"https://picsum.photos/300/400?5"}
+  ];
+
+  let favorites = JSON.parse(localStorage.getItem("fav")) || [];
+
+  const movieRow = document.getElementById("movieRow");
+  const favRow = document.getElementById("favRow");
+
+  function renderMovies(list) {
+    movieRow.innerHTML = "";
+    list.forEach(m => {
+      const div = document.createElement("div");
+      div.className = "card";
+      div.innerHTML = `
+        <img src="${m.img}">
+        <div class="info">${m.title}</div>
+        <div class="fav">Add</div>
+      `;
+
+      div.onclick = playVideo;
+      div.querySelector(".fav").onclick = (e) => {
+        e.stopPropagation();
+        addToFav(m);
+      };
+
+      movieRow.appendChild(div);
+    });
+  }
+
+  function addToFav(movie) {
+    if(!favorites.find(f => f.title === movie.title)){
+      favorites.push(movie);
+      localStorage.setItem("fav", JSON.stringify(favorites));
+      renderFav();
+    }
+  }
+
+  function renderFav() {
+    favRow.innerHTML = "";
+    favorites.forEach(m => {
+      const div = document.createElement("div");
+      div.className = "card";
+      div.innerHTML = `<img src="${m.img}"><div class="info">${m.title}</div>`;
+      favRow.appendChild(div);
+    });
+  }
+
+  function searchMovie(keyword) {
+    const result = movies.filter(m => m.title.toLowerCase().includes(keyword.toLowerCase()));
+    renderMovies(result);
+  }
+
+  function playVideo() {
+    document.getElementById("player").style.display = "flex";
+    document.getElementById("videoPlayer").play();
+  }
+
+  function closePlayer() {
+    document.getElementById("player").style.display = "none";
+    document.getElementById("videoPlayer").pause();
+  }
+
+  function login() {
+    const u = document.getElementById("user").value;
+    const p = document.getElementById("pass").value;
+
+    if(u && p) {
+      localStorage.setItem("login", "true");
+      document.getElementById("loginPage").style.display = "none";
+    }
+  }
+
+  if(localStorage.getItem("login") === "true"){
+    document.getElementById("loginPage").style.display = "none";
+  }
+
+  renderMovies(movies);
+  renderFav();
+</script>
+
+</body>
+</html>
